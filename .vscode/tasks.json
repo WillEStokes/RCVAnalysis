@@ -11,11 +11,13 @@
                 "-I",
                 "${workspaceFolder}",
                 "-g",
-                "${workspaceFolder}/src/arrayPractice.cpp",
+                // "${workspaceFolder}/src/arrayPractice.cpp",
+                "${file}",
                 "-static-libstdc++",
                 "-static-libgcc",
                 "-o",
-                "${workspaceFolder}/build/bin/arrayPractice.exe",
+                // "${workspaceFolder}/build/bin/arrayPractice.exe",
+                "${workspaceFolder}/build/bin/${fileBasenameNoExtension}.exe",
             ],
             "options": {
                 "cwd": "C:\\MinGW\\bin"

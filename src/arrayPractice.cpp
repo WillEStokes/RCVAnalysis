@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string.h>
 #include <math.h>
+#include <numeric>
 #include "arrayPractice.h"
 
 #define ELEMENTS 2817
@@ -14,6 +15,8 @@
 std::vector<double> readFile(std::string file_name);
 template<std::size_t SIZE>
 std::array<double, SIZE> deriv(std::array<double, SIZE>& data);
+template<std::size_t SIZE>
+std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned int smoothWidth);
 
 int main()
 {
@@ -27,17 +30,18 @@ int main()
 
     const double slopeThreshold=-1;
     const double ampThreshold=0;
-    const int smoothWidth=5;
+    const unsigned int smoothWidth=5;
     const int peakGroup=3;
     const double heightThreshold=1;
     const double locationThreshold=0.02;
     
     // smooth data and find derivative
     std::array<double, ELEMENTS> deriv_yData = deriv(yData);
+    std::array<double, ELEMENTS> smooth_yData = fastSmooth(yData, smoothWidth);
 
-    for (int i=0; i < deriv_yData.size(); i++)
+    for (int i=0; i < smooth_yData.size(); i++)
     {
-        printf("%f\n",deriv_yData[i]);
+        printf("%f\n",smooth_yData[i]);
     }
 
     std::cin.get();
@@ -78,6 +82,29 @@ std::array<double, SIZE> deriv(std::array<double, SIZE>& data)
     return deriv;
 }
 
+
+template<std::size_t SIZE>
+std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned int smoothWidth)
+{
+    std::array<double, SIZE> smooth_yData;
+    std::array<double, SIZE> temp;
+    double sumPoints = std::accumulate(yData.begin(), yData.end() + smoothWidth, 0.0);
+    int halfWidth = round(smoothWidth/2);
+    for (int i = 0; i < yData.size() - smoothWidth; i++)
+    {
+        temp[i + halfWidth - 1] = sumPoints;
+        sumPoints = sumPoints - yData[i];
+        sumPoints = sumPoints + yData[i + smoothWidth];
+    }
+    temp[yData.size() - smoothWidth - 1 + halfWidth] = std::accumulate(yData.begin() + yData.size() - smoothWidth + 1, yData.end() + yData.size(), 0.0);
+    
+    for (int i = 0; i < yData.size() - smoothWidth; i++)
+    {
+        smooth_yData[i] = temp[i] / smoothWidth;
+    }
+
+    return smooth_yData;
+}
 
 // function SmoothY=fastsmooth(Y,smoothwidth)
 // SumPoints=sum(Y(1:smoothwidth));
