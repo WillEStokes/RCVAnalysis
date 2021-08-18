@@ -37,12 +37,10 @@ int main()
     
     // smooth data and find derivative
     std::array<double, ELEMENTS> deriv_yData = deriv(yData);
-    std::array<double, ELEMENTS> smooth_yData = fastSmooth(yData, smoothWidth);
+    std::array<double, ELEMENTS> smooth_yData = fastSmooth(deriv_yData, smoothWidth);
 
-    for (int i=0; i < smooth_yData.size(); i++)
-    {
-        printf("%f\n",smooth_yData[i]);
-    }
+    // for (int i = 0; i < smooth_yData.size(); i++)
+    //     printf("%f\n",smooth_yData[i]);
 
     std::cin.get();
     return 0;
@@ -75,9 +73,9 @@ std::array<double, SIZE> deriv(std::array<double, SIZE>& data)
     deriv[0] = data[1] - data[0];
     for(int j = 1; j < numElements - 1; j++)
     {
-        deriv[j] = (data[j+1]-data[j-1]) / 2;
+        deriv[j] = (data[j + 1] - data[j - 1]) / 2;
     }
-    deriv[numElements] = data[numElements] - data[numElements-1];
+    deriv[numElements - 1] = data[numElements - 1] - data[numElements - 2];
 
     return deriv;
 }
@@ -88,34 +86,21 @@ std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned in
 {
     std::array<double, SIZE> smooth_yData;
     std::array<double, SIZE> temp;
-    double sumPoints = std::accumulate(yData.begin(), yData.end() + smoothWidth, 0.0);
-    int halfWidth = round(smoothWidth/2);
-    for (int i = 0; i < yData.size() - smoothWidth; i++)
+    double sumPoints = std::accumulate(yData.begin(), yData.begin() + smoothWidth, 0.0);
+    int halfWidth = round(smoothWidth / 2);
+    int numPoints = yData.size();
+    for (int i = 0; i < numPoints - smoothWidth; i++)
     {
-        temp[i + halfWidth - 1] = sumPoints;
+        temp[i + halfWidth] = sumPoints;
         sumPoints = sumPoints - yData[i];
         sumPoints = sumPoints + yData[i + smoothWidth];
     }
-    temp[yData.size() - smoothWidth - 1 + halfWidth] = std::accumulate(yData.begin() + yData.size() - smoothWidth + 1, yData.end() + yData.size(), 0.0);
-    
-    for (int i = 0; i < yData.size() - smoothWidth; i++)
+    // temp[numPoints - smoothWidth + halfWidth] = std::accumulate(yData.begin() + numPoints - smoothWidth, yData.begin() + numPoints - 1, 0.0);
+
+    for (int i = 0; i < numPoints; i++)
     {
         smooth_yData[i] = temp[i] / smoothWidth;
     }
 
     return smooth_yData;
 }
-
-// function SmoothY=fastsmooth(Y,smoothwidth)
-// SumPoints=sum(Y(1:smoothwidth));
-// s=zeros(size(Y));
-// halfw=round(smoothwidth/2);
-// L=length(Y);
-// for k=1:L-smoothwidth
-//     s(k+halfw-1)=SumPoints;
-//     SumPoints=SumPoints-Y(k);
-//     SumPoints=SumPoints+Y(k+smoothwidth);
-// end
-// s(k+halfw)=sum(Y(L-smoothwidth+1:L));
-// SmoothY=s./smoothwidth;
-// end
