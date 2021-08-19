@@ -7,6 +7,8 @@
 #include <string.h>
 #include <math.h>
 #include <numeric>
+#include <algorithm>
+#include <stdbool.h>
 #include "arrayPractice.h"
 
 #define ELEMENTS 2817
@@ -17,6 +19,10 @@ template<std::size_t SIZE>
 std::array<double, SIZE> deriv(std::array<double, SIZE>& data);
 template<std::size_t SIZE>
 std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned int smoothWidth);
+template<std::size_t SIZE>
+std::vector<double> val2ind(std::array<double, SIZE>& xData, double val);
+template<std::size_t SIZE>
+std::array<double, SIZE> forEach(const std::array<double, SIZE>& values, double modifier, double(*func)(double, double));
 
 int main()
 {
@@ -36,15 +42,102 @@ int main()
     const double locationThreshold=0.02;
     
     // smooth data and find derivative
-    std::array<double, ELEMENTS> deriv_yData = deriv(yData);
-    std::array<double, ELEMENTS> smooth_yData = fastSmooth(deriv_yData, smoothWidth);
+    std::array<double, ELEMENTS> yDeriv = deriv(yData);
+    if (smoothWidth > 1) {
+        yDeriv = fastSmooth(yDeriv, smoothWidth);
+    }
 
-    // for (int i = 0; i < smooth_yData.size(); i++)
-    //     printf("%f\n",smooth_yData[i]);
+    // find peaks
+    double peakX, peakY;
+    int groupIndex;
+    std::vector<double> pIndex;
+    std::vector<double> heights;
+    std::vector<double> locations;
+    std::vector<int> indexes;
+    for (int j = 2 * round(smoothWidth/2) - 2; j < ELEMENTS - smoothWidth - 1; j++)
+    {
+        if (yDeriv[j] > 0 && yDeriv[j + 1] < 0)
+        {
+            if (yDeriv[j]-yDeriv[j + 1] > slopeThreshold)
+            {
+                std::array<double, peakGroup> xIndexes;
+                std::array<double, peakGroup> yIndexes;
+                for (int k = 0; k < peakGroup; k++)
+                {
+                    groupIndex = j + k - round(peakGroup / 2 + 1) + 2;
+                    if (groupIndex < 1) {groupIndex = 1; }
+                    if (groupIndex > ELEMENTS) {groupIndex = ELEMENTS; }
+                    xIndexes[k] = xData[groupIndex];
+                    yIndexes[k] = yData[groupIndex];
+                }
+                
+                if (peakGroup < 3) {peakY = *std::max_element(yIndexes.begin(),yIndexes.end()); }
+                else {peakY = std::accumulate(yIndexes.begin(), yIndexes.end(), 0.0)/yIndexes.size(); }
+
+                pIndex = val2ind(yIndexes, peakY);
+                peakX = xIndexes[pIndex[0]];
+
+                if (peakY > ampThreshold)
+                {
+                    heights.push_back(peakY);
+                    locations.push_back(peakX);
+                    indexes.push_back(j);
+                    // printf("%f, %f, %i\n", peakX, peakY, j);
+                }
+            }
+        }
+    }
+
+    bool peak = false;
+    for (int i = 1; i < heights.size() - 1; i++)
+        if (heights[i] - heights [i-1] > heightThreshold)
+            {peak = true; }
+
+    
 
     std::cin.get();
     return 0;
 }
+
+// for i=2:length(heights)-1
+//     if heights(i)-heights(i-1)>heightThreshold
+//         peak=true;
+//     end
+//     if peak==true
+//         peaksFiltered(j,1)=heights(i);
+//         peaksFiltered(j,2)=locations(i);
+//         peaksFiltered(j,3)=i;
+//         j=j+1;
+//     end
+//     if heights(i+1)-heights(i)<-heightThreshold
+//         peak=false;
+//     end
+// end
+// peaksFiltered(~any(peaksFiltered,2),:)=[];
+
+// % Filter for locations
+// group=1;
+// groups=zeros(size(peaksFiltered,1),1);
+// for i=1:size(peaksFiltered,1)-1
+//     groups(i)=group;
+//     if peaksFiltered(i+1,2)-peaksFiltered(i,2)>locationThreshold
+//         group=group+1;
+//     end
+// end
+// groups(i+1)=group;
+
+// distancedPeaks=zeros(length(groups),3);
+// for i=1:max(groups)
+//     groupInd=groups==i;
+//     [distancedPeaks(i,1),ind]=max(peaksFiltered(groupInd,1));
+//     maxLocation=peaksFiltered(groupInd,2);
+//     distancedPeaks(i,2)=maxLocation(ind);
+//     maxInd=peaksFiltered(groupInd,3);
+//     distancedPeaks(i,3)=maxInd(ind);
+// end
+// distancedPeaks(~any(distancedPeaks,2),:)=[];
+
+// peaksFiltered=distancedPeaks;
 
 
 std::vector<double> readFile(std::string file_name)
@@ -103,4 +196,31 @@ std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned in
     }
 
     return smooth_yData;
+}
+
+template<std::size_t SIZE>
+std::array<double, SIZE> forEach(const std::array<double, SIZE>& values, double modifier, double(*func)(double, double))
+{
+    std::array<double, SIZE> modifiedArray;
+    for (int i = 0; i < modifiedArray.size(); i++)
+        modifiedArray[i] = func(values[i], modifier);
+
+    return modifiedArray;
+}
+
+template<std::size_t SIZE>
+std::vector<double> val2ind(std::array<double, SIZE>& yInd, double val)
+{
+    std::array<double, SIZE> sumArray = forEach(yInd, val, [](double a, double b) ->double {return a - b; });
+    std::array<double, SIZE> diff = forEach(yInd, 0, [](double a, double b) ->double {return abs(a);});
+    double minDiff = *std::min_element(diff.begin(), diff.end());
+    diff = forEach(diff, minDiff, [](double a, double b) ->double {return a - b; });
+
+    std::vector<double> indexes;
+    for (int i = 0; i < diff.size(); i++)
+    {
+        if (diff[i] < 1e-15) {indexes.push_back(i); }
+    }
+
+    return indexes;
 }

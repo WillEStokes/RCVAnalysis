@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <numeric>
+#include <algorithm>
 #include <functional>
 
 template<std::size_t SIZE>
@@ -21,14 +22,24 @@ std::array<double, SIZE> ForEach(const std::array<double, SIZE>& values, double 
 
 int main()
 {
-    const std::array<double, 4>yData = {1.0, 2.0, 1.5, 2.0};
+    const std::array<double, 4>yData = {1.0, 2.0, -1.5, 2.0};
     
-    // do maths to array elements with function pointer
+    // do maths to array elements with lambda function pointer
     std::array<double, 4> sumArray = ForEach(yData, 1.0, [](double a, double b) ->double {return a + b;});
+
+    // abs of array
+    std::array<double, 4> absArray = ForEach(yData, 1.0, [](double a, double b) ->double {return abs(a);});
+
+    // min element of array
+    double minElement = *std::min_element(yData.begin(), yData.end());
+    printf("minELement: %f\n", minElement);
+
     for(int i = 0; i < 4; ++i)
-    {
         printf("%f, ", sumArray[i]);
-    }
+    
+    printf("\n");
+    for(int i = 0; i < 4; ++i)
+        printf("%f, ", absArray[i]);
 
     // sum array elements with std::accumulate
     double sumPoints = std::accumulate(yData.begin() + 1, yData.end(), 0.0);
