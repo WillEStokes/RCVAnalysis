@@ -24,6 +24,10 @@ int main()
 {
     const std::array<double, 4>yData = {1.0, 2.0, -1.5, 2.0};
     
+    // index of element in vector
+    int index = std::find(yData.begin(), yData.end(), -1.5) - yData.begin();
+    printf("index: %i\n", index);
+
     // do maths to array elements with lambda function pointer
     std::array<double, 4> sumArray = ForEach(yData, 1.0, [](double a, double b) ->double {return a + b;});
 

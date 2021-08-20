@@ -71,6 +71,15 @@
         "forward_list": "cpp",
         "valarray": "cpp",
         "csignal": "cpp",
-        "mstd_atomic": "cpp"
+        "mstd_atomic": "cpp",
+        "any": "cpp",
+        "cfenv": "cpp",
+        "charconv": "cpp",
+        "codecvt": "cpp",
+        "complex": "cpp",
+        "csetjmp": "cpp",
+        "cuchar": "cpp",
+        "scoped_allocator": "cpp",
+        "typeindex": "cpp"
     }
 }

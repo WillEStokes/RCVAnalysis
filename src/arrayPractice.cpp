@@ -8,7 +8,6 @@
 #include <math.h>
 #include <numeric>
 #include <algorithm>
-#include <stdbool.h>
 #include "arrayPractice.h"
 
 #define ELEMENTS 2817
@@ -51,9 +50,9 @@ int main()
     double peakX, peakY;
     int groupIndex;
     std::vector<double> pIndex;
-    std::vector<double> heights;
-    std::vector<double> locations;
-    std::vector<int> indexes;
+    std::vector<double> allHeights;
+    std::vector<double> allLocations;
+    std::vector<int> allIndexes;
     for (int j = 2 * round(smoothWidth/2) - 2; j < ELEMENTS - smoothWidth - 1; j++)
     {
         if (yDeriv[j] > 0 && yDeriv[j + 1] < 0)
@@ -79,65 +78,77 @@ int main()
 
                 if (peakY > ampThreshold)
                 {
-                    heights.push_back(peakY);
-                    locations.push_back(peakX);
-                    indexes.push_back(j);
-                    // printf("%f, %f, %i\n", peakX, peakY, j);
+                    allIndexes.push_back(j);
+                    allHeights.push_back(peakY);
+                    allLocations.push_back(peakX);
+                    // printf("%i, height: %f, location: %f\n", j, peakY, peakX);
                 }
             }
         }
     }
 
-    bool peak = false;
-    for (int i = 1; i < heights.size() - 1; i++)
-        if (heights[i] - heights [i-1] > heightThreshold)
-            {peak = true; }
+    std::vector<int> filteredIndexes;
+    std::vector<double> filteredHeights;
+    std::vector<double> filteredLocations;
 
+    for (int i = 1; i < allHeights.size() - 1; i++)
+    {
+        if (allHeights[i] - allHeights[i-1] > heightThreshold)
+        {
+            filteredIndexes.push_back(allIndexes[i]);
+            filteredHeights.push_back(allHeights[i]);
+            filteredLocations.push_back(allLocations[i]);
+        }
+    }
     
+    int group = 0;
+    std::vector<int> groupsVect;
+    for (int i = 0; i < filteredIndexes.size() - 1; i++)
+    {
+        groupsVect.push_back(group);
+        if (filteredLocations[i + 1] - filteredLocations[i] > locationThreshold)
+        {
+            group = group + 1;
+        }
+    }
+    groupsVect.push_back(group);
+
+    std::vector<int> indexes;
+    std::vector<double> heights;
+    std::vector<double> locations;
+    std::vector<int> tempIndexes;
+    std::vector<double> tempHeights;
+    std::vector<double> tempLocations;
+    
+    int groups = *std::max_element(groupsVect.begin(), groupsVect.end()) + 1;
+    for (int i = 0; i < groups; i++)
+    {
+        tempIndexes.clear();
+        tempHeights.clear();
+        tempLocations.clear();
+        for (int j = 0; j < groupsVect.size(); j++)
+        {
+            if (groupsVect.at(j) == i)
+            {
+                tempIndexes.push_back(filteredIndexes[j]);
+                tempHeights.push_back(filteredHeights[j]);
+                tempLocations.push_back(filteredLocations[j]);
+            }
+        }
+        int index = std::find(tempHeights.begin(), tempHeights.end(), *std::max_element(tempHeights.begin(),tempHeights.end())) - tempHeights.begin();
+        indexes.push_back(tempIndexes[index]);
+        heights.push_back(tempHeights[index]);
+        locations.push_back(tempLocations[index]);
+    }
+
+    for (int k = 0; k < indexes.size(); k++)
+    {
+        std::cout << indexes.at(k) << ", " << heights.at(k) << ", " << locations.at(k) << std::endl;
+    }
 
     std::cin.get();
     return 0;
 }
-
-// for i=2:length(heights)-1
-//     if heights(i)-heights(i-1)>heightThreshold
-//         peak=true;
-//     end
-//     if peak==true
-//         peaksFiltered(j,1)=heights(i);
-//         peaksFiltered(j,2)=locations(i);
-//         peaksFiltered(j,3)=i;
-//         j=j+1;
-//     end
-//     if heights(i+1)-heights(i)<-heightThreshold
-//         peak=false;
-//     end
-// end
-// peaksFiltered(~any(peaksFiltered,2),:)=[];
-
-// % Filter for locations
-// group=1;
-// groups=zeros(size(peaksFiltered,1),1);
-// for i=1:size(peaksFiltered,1)-1
-//     groups(i)=group;
-//     if peaksFiltered(i+1,2)-peaksFiltered(i,2)>locationThreshold
-//         group=group+1;
-//     end
-// end
-// groups(i+1)=group;
-
-// distancedPeaks=zeros(length(groups),3);
-// for i=1:max(groups)
-//     groupInd=groups==i;
-//     [distancedPeaks(i,1),ind]=max(peaksFiltered(groupInd,1));
-//     maxLocation=peaksFiltered(groupInd,2);
-//     distancedPeaks(i,2)=maxLocation(ind);
-//     maxInd=peaksFiltered(groupInd,3);
-//     distancedPeaks(i,3)=maxInd(ind);
-// end
-// distancedPeaks(~any(distancedPeaks,2),:)=[];
-
-// peaksFiltered=distancedPeaks;
 
 
 std::vector<double> readFile(std::string file_name)
@@ -219,7 +230,7 @@ std::vector<double> val2ind(std::array<double, SIZE>& yInd, double val)
     std::vector<double> indexes;
     for (int i = 0; i < diff.size(); i++)
     {
-        if (diff[i] < 1e-15) {indexes.push_back(i); }
+        if (diff[i] == 0) {indexes.push_back(i); }
     }
 
     return indexes;
