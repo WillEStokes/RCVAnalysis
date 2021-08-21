@@ -54,6 +54,7 @@ void findFeatures(std::array<double, ELEMENTS> xData,
     std::array<double, 2>& FWHM, 
     std::array<std::array<double, 2>, 2>& xValsFullHeight, 
     std::array<std::array<double, 2>, 2>& xValsHalfHeight );
+void readFileWrapper(char* file_name, double data[2817]);
 void readFile(std::string file_name, std::vector<double>& data);
 template<std::size_t SIZE>
 std::array<double, SIZE> deriv(std::array<double, SIZE>& data);
@@ -190,7 +191,24 @@ void findFeaturesWrapper(double* xData,
             it = it + 1;
         }
     }
+}
 
+void readFileWrapper(char* file_name, double data[2817])
+{
+    int file_name_size = strlen(file_name);
+    std::string file_name_string = "";
+    for (int i = 0; i < file_name_size; i++)
+    {
+        file_name_string = file_name_string + file_name[i];
+    }
+    std::vector<double> fileData;
+
+    readFile(file_name_string, fileData);
+
+    for (int i = 0; i < 2817; i++)
+    {
+        data[i] = fileData[i];
+    }
 }
 
 void findPeaks(std::array<double, ELEMENTS> xData, 
@@ -205,13 +223,11 @@ void findPeaks(std::array<double, ELEMENTS> xData,
     std::array<double, 2>& heights, 
     std::array<double, 2>& locations )
 {
-    // smooth data and find derivative
     std::array<double, ELEMENTS> yDeriv = deriv(yData);
     if (smoothWidth > 1) {
         yDeriv = fastSmooth(yDeriv, smoothWidth);
     }
 
-    // find peaks
     double peakX, peakY;
     int groupIndex;
     int numPeaks;
@@ -287,8 +303,6 @@ void findPeaks(std::array<double, ELEMENTS> xData,
     std::vector<double> tempHeights;
     std::vector<double> tempLocations;
     
-    // int groups = *std::max_element(groupsVect.begin(), groupsVect.end()) + 1;
-    // for (int i = 0; i < groups; i++)
     for (int i = 0; i < 2; i++)
     {
         tempIndexes.clear();
@@ -391,7 +405,6 @@ void readFile(std::string file_name, std::vector<double>& data)
     }
 }
 
-
 template<std::size_t SIZE>
 std::array<double, SIZE> deriv(std::array<double, SIZE>& data)
 {
@@ -407,7 +420,6 @@ std::array<double, SIZE> deriv(std::array<double, SIZE>& data)
     return deriv;
 }
 
-
 template<std::size_t SIZE>
 std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned int smoothWidth)
 {
@@ -422,7 +434,6 @@ std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned in
         sumPoints = sumPoints - yData[i];
         sumPoints = sumPoints + yData[i + smoothWidth];
     }
-    // temp[numPoints - smoothWidth + halfWidth] = std::accumulate(yData.begin() + numPoints - smoothWidth, yData.begin() + numPoints - 1, 0.0);
 
     for (int i = 0; i < numPoints; i++)
     {
@@ -461,7 +472,6 @@ std::vector<double> val2ind(std::array<double, SIZE>& yInd, int numPeaks, double
 
 double trapz(std::array<double, ELEMENTS> xData, std::array<double, ELEMENTS> yData, int beginInd, int endInd)
 {
-    // double dx = (xData[endInd] - xData[beginInd]) / (endInd - beginInd + 1);
     double dx = xData[1] - xData[0];
     
     double peakArea = dx * yData[beginInd] / 2;

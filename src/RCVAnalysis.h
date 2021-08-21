@@ -27,5 +27,6 @@ extern "C" void findFeaturesWrapper(double* xData,
     double FWHM[2], 
     double xValsFullHeight[4], 
     double xValsHalfHeight[4] );
+extern "C" void readFileWrapper(char* file_name, double data[2817]);
 
 #endif
