@@ -8,20 +8,44 @@
 #include <math.h>
 #include <numeric>
 #include <algorithm>
+#include <chrono> // for timing
+#include <unistd.h> // for sleep
+#include <ctime>
 #include "arrayPractice.h"
 
 #define ELEMENTS 2817
 
 // Function declerations
+void findPeaks(std::array<double, ELEMENTS> xData, 
+    std::array<double, ELEMENTS> yData, 
+    const double slopeThreshold, 
+    const double ampThreshold, 
+    const unsigned int smoothWidth, 
+    const int peakGroup, 
+    const double heightThreshold, 
+    const double locationThreshold, 
+    std::array<int, 2>& indexes, 
+    std::array<double, 2>& heights, 
+    std::array<double, 2>& locations );
+void findFeatures(std::array<double, ELEMENTS> xData, 
+    std::array<double, ELEMENTS> yData, 
+    std::array<int, 2> indexes, 
+    const unsigned int smoothWidth, 
+    std::array<double, 2>& peakArea, 
+    std::array<double, 2>& fullHeight, 
+    std::array<double, 2>& FWHM, 
+    std::array<std::array<int, 2>, 2>& xValsFullHeight, 
+    std::array<std::array<int, 2>, 2>& xValsHalfHeight );
 std::vector<double> readFile(std::string file_name);
 template<std::size_t SIZE>
 std::array<double, SIZE> deriv(std::array<double, SIZE>& data);
 template<std::size_t SIZE>
 std::array<double, SIZE> fastSmooth(std::array<double, SIZE>& yData, unsigned int smoothWidth);
 template<std::size_t SIZE>
-std::vector<double> val2ind(std::array<double, SIZE>& xData, double val);
+std::vector<double> val2ind(std::array<double, SIZE>& xData, int numPeaks, double val);
 template<std::size_t SIZE>
 std::array<double, SIZE> forEach(const std::array<double, SIZE>& values, double modifier, double(*func)(double, double));
+double trapz(std::array<double, ELEMENTS> xData, std::array<double, ELEMENTS> yData, int beginInd, int endInd);
 
 int main()
 {
@@ -39,7 +63,50 @@ int main()
     const int peakGroup=3;
     const double heightThreshold=1;
     const double locationThreshold=0.02;
+    std::array<int, 2> indexes;
+    std::array<double, 2> heights;
+    std::array<double, 2> locations;
     
+    // auto t1 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    
+    findPeaks(xData, yData, slopeThreshold, ampThreshold, smoothWidth, peakGroup, heightThreshold, locationThreshold, indexes, heights, locations);
+    
+    // auto t2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    
+    std::array<double, 2> peakArea;
+    std::array<double, 2> fullHeight;
+    std::array<double, 2> FWHM;
+    std::array<std::array<int, 2>, 2> xValsFullHeight;
+    std::array<std::array<int, 2>, 2> xValsHalfHeight;
+
+    findFeatures(xData, yData, indexes, smoothWidth, peakArea, fullHeight, FWHM, xValsFullHeight, xValsHalfHeight);
+
+    // auto t2 = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    // std::cout << "Elapsed time: " << t2 - t1 << " ns" << "; t2 = " << t2 << " ns; t1 = " << t1 << " ns" << std::endl;
+
+    for (int k = 0; k < indexes.size(); k++)
+    {
+        std::cout << indexes.at(k) << ", " << heights.at(k) << ", " << locations.at(k) << std::endl;
+    }
+
+    std::cout << "peak 1 area: " << peakArea[0] << "; peak 2 area: " << peakArea[1] << std::endl;
+    
+    std::cin.get();
+    return 0;
+}
+
+void findPeaks(std::array<double, ELEMENTS> xData, 
+    std::array<double, ELEMENTS> yData, 
+    const double slopeThreshold, 
+    const double ampThreshold, 
+    const unsigned int smoothWidth, 
+    const int peakGroup, 
+    const double heightThreshold, 
+    const double locationThreshold, 
+    std::array<int, 2>& indexes, 
+    std::array<double, 2>& heights, 
+    std::array<double, 2>& locations )
+{
     // smooth data and find derivative
     std::array<double, ELEMENTS> yDeriv = deriv(yData);
     if (smoothWidth > 1) {
@@ -49,6 +116,9 @@ int main()
     // find peaks
     double peakX, peakY;
     int groupIndex;
+    int numPeaks;
+    std::array<double, ELEMENTS> xIndexes;
+    std::array<double, ELEMENTS> yIndexes;
     std::vector<double> pIndex;
     std::vector<double> allHeights;
     std::vector<double> allLocations;
@@ -59,8 +129,10 @@ int main()
         {
             if (yDeriv[j]-yDeriv[j + 1] > slopeThreshold)
             {
-                std::array<double, peakGroup> xIndexes;
-                std::array<double, peakGroup> yIndexes;
+                numPeaks = 0;
+                xIndexes.fill(0);
+                yIndexes.fill(0);
+
                 for (int k = 0; k < peakGroup; k++)
                 {
                     groupIndex = j + k - round(peakGroup / 2 + 1) + 2;
@@ -68,12 +140,13 @@ int main()
                     if (groupIndex > ELEMENTS) {groupIndex = ELEMENTS; }
                     xIndexes[k] = xData[groupIndex];
                     yIndexes[k] = yData[groupIndex];
+                    numPeaks = numPeaks + 1;
                 }
                 
-                if (peakGroup < 3) {peakY = *std::max_element(yIndexes.begin(),yIndexes.end()); }
-                else {peakY = std::accumulate(yIndexes.begin(), yIndexes.end(), 0.0)/yIndexes.size(); }
+                if (peakGroup < 3) {peakY = *std::max_element(yIndexes.begin(), yIndexes.begin() + numPeaks); }
+                else {peakY = std::accumulate(yIndexes.begin(), yIndexes.begin() + numPeaks, 0.0) / numPeaks; }
 
-                pIndex = val2ind(yIndexes, peakY);
+                pIndex = val2ind(yIndexes, numPeaks, peakY);
                 peakX = xIndexes[pIndex[0]];
 
                 if (peakY > ampThreshold)
@@ -81,7 +154,6 @@ int main()
                     allIndexes.push_back(j);
                     allHeights.push_back(peakY);
                     allLocations.push_back(peakX);
-                    // printf("%i, height: %f, location: %f\n", j, peakY, peakX);
                 }
             }
         }
@@ -113,15 +185,13 @@ int main()
     }
     groupsVect.push_back(group);
 
-    std::vector<int> indexes;
-    std::vector<double> heights;
-    std::vector<double> locations;
     std::vector<int> tempIndexes;
     std::vector<double> tempHeights;
     std::vector<double> tempLocations;
     
-    int groups = *std::max_element(groupsVect.begin(), groupsVect.end()) + 1;
-    for (int i = 0; i < groups; i++)
+    // int groups = *std::max_element(groupsVect.begin(), groupsVect.end()) + 1;
+    // for (int i = 0; i < groups; i++)
+    for (int i = 0; i < 2; i++)
     {
         tempIndexes.clear();
         tempHeights.clear();
@@ -136,20 +206,79 @@ int main()
             }
         }
         int index = std::find(tempHeights.begin(), tempHeights.end(), *std::max_element(tempHeights.begin(),tempHeights.end())) - tempHeights.begin();
-        indexes.push_back(tempIndexes[index]);
-        heights.push_back(tempHeights[index]);
-        locations.push_back(tempLocations[index]);
+        indexes[i] = tempIndexes[index];
+        heights[i] = tempHeights[index];
+        locations[i] = tempLocations[index];
     }
 
-    for (int k = 0; k < indexes.size(); k++)
-    {
-        std::cout << indexes.at(k) << ", " << heights.at(k) << ", " << locations.at(k) << std::endl;
-    }
-
-    std::cin.get();
-    return 0;
 }
 
+void findFeatures(std::array<double, ELEMENTS> xData, 
+    std::array<double, ELEMENTS> yData, 
+    std::array<int, 2> indexes, 
+    const unsigned int smoothWidth, 
+    std::array<double, 2>& peakArea, 
+    std::array<double, 2>& fullHeight, 
+    std::array<double, 2>& FWHM, 
+    std::array<std::array<int, 2>, 2>& xValsFullHeight, 
+    std::array<std::array<int, 2>, 2>& xValsHalfHeight )
+{
+    yData = fastSmooth(yData, smoothWidth);
+    std::array<double, ELEMENTS> yDeriv = deriv(yData);
+
+    int xIndsFullHeight[2][2];
+    double yValsFullWidth[2][2];
+    for (int j = 0; j < 2; j++ )
+    {
+        for (int i = indexes[j] - 1; i >= 0; i-- )
+        {
+            if (yDeriv[i] < 0)
+            {
+                xValsFullHeight[j][0] = xData[i];
+                yValsFullWidth[j][0] = yData[i];
+                xIndsFullHeight[j][0] = i;
+                break;
+            }
+        }
+        for (int i = indexes[j] + 1; i < ELEMENTS; i++ )
+        {
+            if (yDeriv[i] > 0)
+            {
+                xValsFullHeight[j][1] = xData[i];
+                yValsFullWidth[j][1] = yData[i];
+                xIndsFullHeight[j][1] = i;
+                break;
+            }
+        }
+    }
+
+    for (int j = 0; j < 2; j++ )
+    {
+        fullHeight[j] = yData[indexes[j]] - (yValsFullWidth[j][0] + (yValsFullWidth[j][1] - yValsFullWidth[j][0]) / 2 );
+        for (int i = indexes[j] - 1; i >= 0; i-- )
+        {
+            if (yData[i] < yData[indexes[j]] - fullHeight[j] / 2 )
+            {
+                xValsHalfHeight[j][0] = xData[i];
+                break;
+            }
+        }
+        for (int i = indexes[j] + 1; i < ELEMENTS; i++ )
+        {
+            if (yData[i] < yData[indexes[j]] - fullHeight[j] / 2 )
+            {
+                xValsHalfHeight[j][1] = xData[i];
+                break;
+            }
+        }
+        FWHM[j] = xValsHalfHeight[j][1] - xValsHalfHeight[j][0];
+    }
+
+    for (int j = 0; j < 2; j++ )
+    {
+        peakArea[j] = trapz(xData, yData, xIndsFullHeight[j][0], xIndsFullHeight[j][1]);
+    }
+}
 
 std::vector<double> readFile(std::string file_name)
 {
@@ -220,18 +349,33 @@ std::array<double, SIZE> forEach(const std::array<double, SIZE>& values, double 
 }
 
 template<std::size_t SIZE>
-std::vector<double> val2ind(std::array<double, SIZE>& yInd, double val)
+std::vector<double> val2ind(std::array<double, SIZE>& yInd, int numPeaks, double val)
 {
     std::array<double, SIZE> sumArray = forEach(yInd, val, [](double a, double b) ->double {return a - b; });
     std::array<double, SIZE> diff = forEach(yInd, 0, [](double a, double b) ->double {return abs(a);});
-    double minDiff = *std::min_element(diff.begin(), diff.end());
+    double minDiff = *std::min_element(diff.begin(), diff.begin() + numPeaks);
     diff = forEach(diff, minDiff, [](double a, double b) ->double {return a - b; });
 
     std::vector<double> indexes;
-    for (int i = 0; i < diff.size(); i++)
+    for (int i = 0; i < numPeaks; i++)
     {
         if (diff[i] == 0) {indexes.push_back(i); }
     }
 
     return indexes;
+}
+
+double trapz(std::array<double, ELEMENTS> xData, std::array<double, ELEMENTS> yData, int beginInd, int endInd)
+{
+    // double dx = (xData[endInd] - xData[beginInd]) / (endInd - beginInd + 1);
+    double dx = xData[1] - xData[0];
+    
+    double peakArea = dx * yData[beginInd] / 2;
+    for (int i = beginInd + 1; i < endInd; i++)
+    {
+        peakArea = peakArea + dx * yData[i];
+    }
+    peakArea = peakArea + dx * yData[endInd] / 2;
+
+    return peakArea;
 }
