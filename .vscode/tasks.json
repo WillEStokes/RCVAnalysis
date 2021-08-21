@@ -40,12 +40,12 @@
                 "-O2",
                 // "-Wall",
                 "-g",
-                "${workspaceFolder}/src/arrayPractice.cpp",
+                "${workspaceFolder}/src/RCVAnalysis.cpp",
                 "-static-libstdc++",
                 "-static-libgcc",
                 "-shared",
                 "-o",
-                "${workspaceFolder}/build/bin/arrayPractice.dll"
+                "${workspaceFolder}/build/bin/RCVAnalysis.dll"
             ],
             "options": {
                 "cwd": "C:\\MinGW\\bin"

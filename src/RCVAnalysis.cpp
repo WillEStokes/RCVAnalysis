@@ -11,17 +11,35 @@
 #include <chrono> // for timing
 #include <unistd.h> // for sleep
 #include <ctime>
-#include "arrayPractice.h"
-
-#define ELEMENTS 2817
+#include "RCVAnalysis.h"
 
 // Function declerations
+void findPeaksWrapper(double* xData, 
+    double* yData, 
+    const double slopeThreshold, 
+    const double ampThreshold, 
+    const unsigned int smoothWidth, 
+    const unsigned int peakGroup, 
+    const double heightThreshold, 
+    const double locationThreshold, 
+    int indexes[2], 
+    double heights[2], 
+    double locations[2] );
+void findFeaturesWrapper(double* xData, 
+    double* yData, 
+    int* indexes, 
+    const unsigned int smoothWidth, 
+    double peakArea[2], 
+    double fullHeight[2], 
+    double FWHM[2], 
+    double xValsFullHeight[4], 
+    double xValsHalfHeight[4] );
 void findPeaks(std::array<double, ELEMENTS> xData, 
     std::array<double, ELEMENTS> yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
     const unsigned int smoothWidth, 
-    const int peakGroup, 
+    const unsigned int peakGroup, 
     const double heightThreshold, 
     const double locationThreshold, 
     std::array<int, 2>& indexes, 
@@ -34,9 +52,9 @@ void findFeatures(std::array<double, ELEMENTS> xData,
     std::array<double, 2>& peakArea, 
     std::array<double, 2>& fullHeight, 
     std::array<double, 2>& FWHM, 
-    std::array<std::array<int, 2>, 2>& xValsFullHeight, 
-    std::array<std::array<int, 2>, 2>& xValsHalfHeight );
-std::vector<double> readFile(std::string file_name);
+    std::array<std::array<double, 2>, 2>& xValsFullHeight, 
+    std::array<std::array<double, 2>, 2>& xValsHalfHeight );
+void readFile(std::string file_name, std::vector<double>& data);
 template<std::size_t SIZE>
 std::array<double, SIZE> deriv(std::array<double, SIZE>& data);
 template<std::size_t SIZE>
@@ -49,8 +67,10 @@ double trapz(std::array<double, ELEMENTS> xData, std::array<double, ELEMENTS> yD
 
 int main()
 {
-    std::vector<double> xDataVect = readFile("C:/Users/menwst/Documents/CPP/arrayPractice/data/xData");
-    std::vector<double> yDataVect = readFile("C:/Users/menwst/Documents/CPP/arrayPractice/data/yData");
+    std::vector<double> xDataVect;
+    std::vector<double> yDataVect;
+    readFile("C:/Users/menwst/Documents/CPP/RCVAnalysis/data/xData", xDataVect);
+    readFile("C:/Users/menwst/Documents/CPP/RCVAnalysis/data/yData", yDataVect);
 
     std::array<double, ELEMENTS> xData;
     std::copy(xDataVect.begin(), xDataVect.begin() + ELEMENTS, xData.begin());
@@ -76,8 +96,8 @@ int main()
     std::array<double, 2> peakArea;
     std::array<double, 2> fullHeight;
     std::array<double, 2> FWHM;
-    std::array<std::array<int, 2>, 2> xValsFullHeight;
-    std::array<std::array<int, 2>, 2> xValsHalfHeight;
+    std::array<std::array<double, 2>, 2> xValsFullHeight;
+    std::array<std::array<double, 2>, 2> xValsHalfHeight;
 
     findFeatures(xData, yData, indexes, smoothWidth, peakArea, fullHeight, FWHM, xValsFullHeight, xValsHalfHeight);
 
@@ -95,12 +115,90 @@ int main()
     return 0;
 }
 
+void findPeaksWrapper(double* xData, 
+    double* yData, 
+    const double slopeThreshold, 
+    const double ampThreshold, 
+    const unsigned int smoothWidth, 
+    const unsigned int peakGroup, 
+    const double heightThreshold, 
+    const double locationThreshold, 
+    int indexes[2], 
+    double heights[2], 
+    double locations[2] )
+{
+    std::array<double, ELEMENTS> xDataArray;
+    memcpy(xDataArray.data(), xData, ELEMENTS*sizeof(double));
+    std::array<double, ELEMENTS> yDataArray;
+    memcpy(yDataArray.data(), yData, ELEMENTS*sizeof(double));
+    std::array<int, 2> indexesArray;
+    memcpy(indexesArray.data(), indexes, 2*sizeof(int));
+    std::array<double, 2> heightsArray;
+    memcpy(heightsArray.data(), heights, 2*sizeof(double));
+    std::array<double, 2> locationsArray;
+    memcpy(locationsArray.data(), locations, 2*sizeof(double));
+
+    findPeaks(xDataArray, yDataArray, slopeThreshold, ampThreshold, smoothWidth, peakGroup, heightThreshold, locationThreshold, indexesArray, heightsArray, locationsArray);
+
+    for (int i = 0; i < 2; i++)
+    {
+        indexes[i] = indexesArray[i];
+        heights[i] = heightsArray[i];
+        locations[i] = locationsArray[i];
+    }
+}
+
+void findFeaturesWrapper(double* xData, 
+    double* yData, 
+    int* indexes, 
+    const unsigned int smoothWidth, 
+    double peakArea[2], 
+    double fullHeight[2], 
+    double FWHM[2], 
+    double xValsFullHeight[4], 
+    double xValsHalfHeight[4] )
+{
+    std::array<double, ELEMENTS> xDataArray;
+    memcpy(xDataArray.data(), xData, ELEMENTS*sizeof(double));
+    std::array<double, ELEMENTS> yDataArray;
+    memcpy(yDataArray.data(), yData, ELEMENTS*sizeof(double));
+    std::array<int, 2> indexesArray;
+    memcpy(indexesArray.data(), indexes, 2*sizeof(int));
+    std::array<double, 2> peakAreaArray;
+    memcpy(peakAreaArray.data(), peakArea, 2*sizeof(double));
+    std::array<double, 2> fullHeightArray;
+    memcpy(fullHeightArray.data(), fullHeight, 2*sizeof(double));
+    std::array<double, 2> FWHMArray;
+    memcpy(FWHMArray.data(), FWHM, 2*sizeof(double));
+    std::array<std::array<double, 2>, 2> xValsFullHeightArray;
+    memcpy(xValsFullHeightArray.data(), xValsFullHeight, 4*sizeof(double));
+    std::array<std::array<double, 2>, 2> xValsHalfHeightArray;
+    memcpy(xValsHalfHeightArray.data(), xValsHalfHeight, 4*sizeof(double));
+
+    findFeatures(xDataArray, yDataArray, indexesArray, smoothWidth, peakAreaArray, fullHeightArray, FWHMArray, xValsFullHeightArray, xValsHalfHeightArray);
+
+    int it = 0;
+    for (int i = 0; i < 2; i++)
+    {
+        peakArea[i] = peakAreaArray[i];
+        fullHeight[i] = fullHeightArray[i];
+        FWHM[i] = FWHMArray[i];
+        for (int j = 0; j < 2; j++)
+        {
+            xValsFullHeight[it] = xValsFullHeightArray[i][j];
+            xValsHalfHeight[it] = xValsHalfHeightArray[i][j];
+            it = it + 1;
+        }
+    }
+
+}
+
 void findPeaks(std::array<double, ELEMENTS> xData, 
     std::array<double, ELEMENTS> yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
     const unsigned int smoothWidth, 
-    const int peakGroup, 
+    const unsigned int peakGroup, 
     const double heightThreshold, 
     const double locationThreshold, 
     std::array<int, 2>& indexes, 
@@ -220,8 +318,8 @@ void findFeatures(std::array<double, ELEMENTS> xData,
     std::array<double, 2>& peakArea, 
     std::array<double, 2>& fullHeight, 
     std::array<double, 2>& FWHM, 
-    std::array<std::array<int, 2>, 2>& xValsFullHeight, 
-    std::array<std::array<int, 2>, 2>& xValsHalfHeight )
+    std::array<std::array<double, 2>, 2>& xValsFullHeight, 
+    std::array<std::array<double, 2>, 2>& xValsHalfHeight )
 {
     yData = fastSmooth(yData, smoothWidth);
     std::array<double, ELEMENTS> yDeriv = deriv(yData);
@@ -280,10 +378,8 @@ void findFeatures(std::array<double, ELEMENTS> xData,
     }
 }
 
-std::vector<double> readFile(std::string file_name)
+void readFile(std::string file_name, std::vector<double>& data)
 {
-    std::vector<double> record;
-
     std::ifstream file;
     file.open(file_name);
 
@@ -291,10 +387,8 @@ std::vector<double> readFile(std::string file_name)
 
     while(getline(file, column_one))
     {
-        record.push_back(atof(column_one.c_str()));
+        data.push_back(atof(column_one.c_str()));
     }
-
-    return record;
 }
 
 
