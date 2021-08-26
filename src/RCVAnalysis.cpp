@@ -14,7 +14,7 @@
 #include "RCVAnalysis.h"
 
 // Function declerations
-void findPeaksWrapper(double* xData, 
+int findPeaksWrapper(double* xData, 
     double* yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
@@ -25,7 +25,7 @@ void findPeaksWrapper(double* xData,
     int indexes[2], 
     double heights[2], 
     double locations[2] );
-void findFeaturesWrapper(double* xData, 
+int findFeaturesWrapper(double* xData, 
     double* yData, 
     int* indexes, 
     const unsigned int smoothWidth, 
@@ -34,7 +34,7 @@ void findFeaturesWrapper(double* xData,
     double FWHM[2], 
     double xValsFullHeight[4], 
     double xValsHalfHeight[4] );
-void findPeaks(std::array<double, ELEMENTS> xData, 
+int findPeaks(std::array<double, ELEMENTS> xData, 
     std::array<double, ELEMENTS> yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
@@ -45,7 +45,7 @@ void findPeaks(std::array<double, ELEMENTS> xData,
     std::array<int, 2>& indexes, 
     std::array<double, 2>& heights, 
     std::array<double, 2>& locations );
-void findFeatures(std::array<double, ELEMENTS> xData, 
+int findFeatures(std::array<double, ELEMENTS> xData, 
     std::array<double, ELEMENTS> yData, 
     std::array<int, 2> indexes, 
     const unsigned int smoothWidth, 
@@ -116,7 +116,7 @@ int main()
     return 0;
 }
 
-void findPeaksWrapper(double* xData, 
+int findPeaksWrapper(double* xData, 
     double* yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
@@ -139,7 +139,7 @@ void findPeaksWrapper(double* xData,
     std::array<double, 2> locationsArray;
     memcpy(locationsArray.data(), locations, 2*sizeof(double));
 
-    findPeaks(xDataArray, yDataArray, slopeThreshold, ampThreshold, smoothWidth, peakGroup, heightThreshold, locationThreshold, indexesArray, heightsArray, locationsArray);
+    int error = findPeaks(xDataArray, yDataArray, slopeThreshold, ampThreshold, smoothWidth, peakGroup, heightThreshold, locationThreshold, indexesArray, heightsArray, locationsArray);
 
     for (int i = 0; i < 2; i++)
     {
@@ -147,9 +147,11 @@ void findPeaksWrapper(double* xData,
         heights[i] = heightsArray[i];
         locations[i] = locationsArray[i];
     }
+
+    return error;
 }
 
-void findFeaturesWrapper(double* xData, 
+int findFeaturesWrapper(double* xData, 
     double* yData, 
     int* indexes, 
     const unsigned int smoothWidth, 
@@ -176,7 +178,7 @@ void findFeaturesWrapper(double* xData,
     std::array<std::array<double, 2>, 2> xValsHalfHeightArray;
     memcpy(xValsHalfHeightArray.data(), xValsHalfHeight, 4*sizeof(double));
 
-    findFeatures(xDataArray, yDataArray, indexesArray, smoothWidth, peakAreaArray, fullHeightArray, FWHMArray, xValsFullHeightArray, xValsHalfHeightArray);
+    int error = findFeatures(xDataArray, yDataArray, indexesArray, smoothWidth, peakAreaArray, fullHeightArray, FWHMArray, xValsFullHeightArray, xValsHalfHeightArray);
 
     int it = 0;
     for (int i = 0; i < 2; i++)
@@ -191,6 +193,8 @@ void findFeaturesWrapper(double* xData,
             it = it + 1;
         }
     }
+
+    return error;
 }
 
 void readFileWrapper(char* file_name, double data[2817])
@@ -211,7 +215,7 @@ void readFileWrapper(char* file_name, double data[2817])
     }
 }
 
-void findPeaks(std::array<double, ELEMENTS> xData, 
+int findPeaks(std::array<double, ELEMENTS> xData, 
     std::array<double, ELEMENTS> yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
@@ -231,6 +235,7 @@ void findPeaks(std::array<double, ELEMENTS> xData,
     double peakX, peakY;
     int groupIndex;
     int numPeaks;
+    int criteria = false;
     std::array<double, ELEMENTS> xIndexes;
     std::array<double, ELEMENTS> yIndexes;
     std::vector<double> pIndex;
@@ -268,15 +273,19 @@ void findPeaks(std::array<double, ELEMENTS> xData,
                     allIndexes.push_back(j);
                     allHeights.push_back(peakY);
                     allLocations.push_back(peakX);
+                    criteria = true;
                 }
             }
         }
     }
 
+    if (criteria == false) {return 1; }
+
     std::vector<int> filteredIndexes;
     std::vector<double> filteredHeights;
     std::vector<double> filteredLocations;
 
+    criteria = false;
     for (int i = 1; i < allHeights.size() - 1; i++)
     {
         if (allHeights[i] - allHeights[i-1] > heightThreshold)
@@ -284,9 +293,12 @@ void findPeaks(std::array<double, ELEMENTS> xData,
             filteredIndexes.push_back(allIndexes[i]);
             filteredHeights.push_back(allHeights[i]);
             filteredLocations.push_back(allLocations[i]);
+            criteria = true;
         }
     }
+    if (criteria == false) {return 2; }
     
+    criteria = false;
     int group = 0;
     std::vector<int> groupsVect;
     for (int i = 0; i < filteredIndexes.size() - 1; i++)
@@ -295,8 +307,10 @@ void findPeaks(std::array<double, ELEMENTS> xData,
         if (filteredLocations[i + 1] - filteredLocations[i] > locationThreshold)
         {
             group = group + 1;
+            criteria = true;
         }
     }
+    if (criteria == false) {return 2; }
     groupsVect.push_back(group);
 
     std::vector<int> tempIndexes;
@@ -322,10 +336,10 @@ void findPeaks(std::array<double, ELEMENTS> xData,
         heights[i] = tempHeights[index];
         locations[i] = tempLocations[index];
     }
-
+    return 0;
 }
 
-void findFeatures(std::array<double, ELEMENTS> xData, 
+int findFeatures(std::array<double, ELEMENTS> xData, 
     std::array<double, ELEMENTS> yData, 
     std::array<int, 2> indexes, 
     const unsigned int smoothWidth, 
@@ -337,6 +351,8 @@ void findFeatures(std::array<double, ELEMENTS> xData,
 {
     yData = fastSmooth(yData, smoothWidth);
     std::array<double, ELEMENTS> yDeriv = deriv(yData);
+
+    if (indexes[0] == 0) {return 1; }
 
     int xIndsFullHeight[2][2];
     double yValsFullWidth[2][2];
@@ -390,6 +406,7 @@ void findFeatures(std::array<double, ELEMENTS> xData,
     {
         peakArea[j] = trapz(xData, yData, xIndsFullHeight[j][0], xIndsFullHeight[j][1]);
     }
+    return 0;
 }
 
 void readFile(std::string file_name, std::vector<double>& data)

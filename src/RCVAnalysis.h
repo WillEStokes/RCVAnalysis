@@ -7,7 +7,7 @@
 
 /* Function Declarations */
 extern "C" int main();
-extern "C" void findPeaksWrapper(double* xData, 
+extern "C" int findPeaksWrapper(double* xData, 
     double* yData, 
     const double slopeThreshold, 
     const double ampThreshold, 
@@ -18,7 +18,7 @@ extern "C" void findPeaksWrapper(double* xData,
     int indexes[2], 
     double heights[2], 
     double locations[2] );
-extern "C" void findFeaturesWrapper(double* xData, 
+extern "C" int findFeaturesWrapper(double* xData, 
     double* yData, 
     int* indexes, 
     const unsigned int smoothWidth, 
