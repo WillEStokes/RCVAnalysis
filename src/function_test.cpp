@@ -9,6 +9,7 @@
 #include <numeric>
 #include <algorithm>
 #include <functional>
+#include <chrono>
 
 template<std::size_t SIZE>
 std::array<double, SIZE> ForEach(const std::array<double, SIZE>& values, double modifier, double(*func)(double, double))
@@ -22,6 +23,9 @@ std::array<double, SIZE> ForEach(const std::array<double, SIZE>& values, double 
 
 int main()
 {
+    float time = 0.01;
+    printf("chrono time: %i\n", std::chrono::microseconds(static_cast<long int>(time * 1000 / 2.0f)));
+    
     const std::array<double, 4>yData = {1.0, 2.0, -1.5, 2.0};
     
     // index of element in vector
