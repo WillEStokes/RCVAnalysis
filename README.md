@@ -1,9 +1,12 @@
 # RCVAnalysis
-Calculating features of rapid cyclic voltammetry traces
+Calculating features of rapid cyclic voltammetry traces.
 
 ## Peak Metric Description
-The following figure demonstrates a sample RCV scan with the peak metrics overlaid:
-Performing RCV Analysis
+The following figure demonstrates a sample RCV scan with the peak metrics overlaid:  
+
+![GitHub Logo](/images/metrics.png)
+
+## Performing RCV Analysis
 In the ‘RCVAnalysis/build/bin’ subdirectory you can find a dynamic link library (RCVAnalysis.dll) which can be used to perform the analysis on raw RCV data. Run the peak finding function *findPeaksWrapper* to return indexes of the peaks followed by the feature calculation function *findFeaturesWrapper* to calculate the peak metrics demonstrated in section 1.1 (Peak Metric Description). These C++ wrapper functions take simple data types which make them more versatile with embedded systems.
 NOTE: the raw RCV output needs to be formatted before passing it to RCVAnalysis.dll. xData is taken as the absolute values of the raw potential data and yData is taken as current in micro amps, converted using the following calibration equation:
   
@@ -11,7 +14,7 @@ NOTE: the raw RCV output needs to be formatted before passing it to RCVAnalysis.
   
 The HISENTS control application uses the RCVAnalysis.dll to analyse RCV data. The application outputs the metrics as a comma delimited file with the columns and rows detailed below. Note that the column and row headers are included here for reference only, these are not present in the HISENTS output files.
 
-
+![GitHub Logo](/images/headers.png)
 
 ## RCV Analysis Methods
 ### Peak Finding Function
