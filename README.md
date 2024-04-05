@@ -14,7 +14,7 @@ NOTE: the raw RCV output needs to be formatted before passing it to RCVAnalysis.
   
 The HISENTS control application uses the RCVAnalysis.dll to analyse RCV data. The application outputs the metrics as a comma delimited file with the columns and rows detailed below. Note that the column and row headers are included here for reference only, these are not present in the HISENTS output files.
 
-![GitHub Logo](/images/headers.png)
+![GitHub Logo](/images/headers.PNG)
 
 ## RCV Analysis Methods
 ### Peak Finding Function
