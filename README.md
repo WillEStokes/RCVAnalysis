@@ -7,7 +7,7 @@ The following figure demonstrates a sample RCV scan with the peak metrics overla
 ![GitHub Logo](/images/metrics.png)
 
 ## Performing RCV Analysis
-In the ‘RCVAnalysis/build/bin’ subdirectory you can find a dynamic link library (RCVAnalysis.dll) which can be used to perform the analysis on raw RCV data. Run the peak finding function *findPeaksWrapper* to return indexes of the peaks followed by the feature calculation function *findFeaturesWrapper* to calculate the peak metrics demonstrated in section 1.1 (Peak Metric Description). These C++ wrapper functions take simple data types which make them more versatile with embedded systems.
+In the ‘RCVAnalysis/build/bin’ subdirectory you can find a dynamic link library (RCVAnalysis.dll) which can be used to perform the analysis on raw RCV data. Run the peak finding function *findPeaksWrapper* to return indexes of the peaks followed by the feature calculation function *findFeaturesWrapper* to calculate the peak metrics. These C++ wrapper functions take simple data types which make them more versatile with embedded systems.
 NOTE: the raw RCV output needs to be formatted before passing it to RCVAnalysis.dll. xData is taken as the absolute values of the raw potential data and yData is taken as current in micro amps, converted using the following calibration equation:
   
 *Current (μA) = 211.24 × Current(Potentiostat Output) + 0.455*

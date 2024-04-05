@@ -79,11 +79,11 @@ int main()
     std::copy(yDataVect.begin(), yDataVect.begin() + ELEMENTS, yData.begin());
 
     const double slopeThreshold=-1;
-    const double ampThreshold=0;
+    const double ampThreshold=-1000;
     const unsigned int smoothWidth=5;
-    const int peakGroup=3;
-    const double heightThreshold=1;
-    const double locationThreshold=0.02;
+    const int peakGroup=5;
+    const double heightThreshold=2.5;
+    const double locationThreshold=0.025;
     std::array<int, 2> indexes;
     std::array<double, 2> heights;
     std::array<double, 2> locations;
@@ -228,16 +228,16 @@ int findPeaks(std::array<double, ELEMENTS> xData,
     std::array<double, 2>& locations )
 {
     std::array<double, ELEMENTS> yDeriv = deriv(yData);
+
     if (smoothWidth > 1) {
         yDeriv = fastSmooth(yDeriv, smoothWidth);
     }
 
     double peakX, peakY;
     int groupIndex;
-    int numPeaks;
     int criteria = false;
-    std::array<double, ELEMENTS> xIndexes;
-    std::array<double, ELEMENTS> yIndexes;
+    std::array<double, ELEMENTS> xGroup;
+    std::array<double, ELEMENTS> yGroup;
     std::vector<double> pIndex;
     std::vector<double> allHeights;
     std::vector<double> allLocations;
@@ -248,25 +248,23 @@ int findPeaks(std::array<double, ELEMENTS> xData,
         {
             if (yDeriv[j]-yDeriv[j + 1] > slopeThreshold)
             {
-                numPeaks = 0;
-                xIndexes.fill(0);
-                yIndexes.fill(0);
+                xGroup.fill(0);
+                yGroup.fill(0);
 
                 for (int k = 0; k < peakGroup; k++)
                 {
-                    groupIndex = j + k - round(peakGroup / 2 + 1) + 2;
+                    groupIndex = j + k; // - int(round(peakGroup / 2 + 1) + 2);
                     if (groupIndex < 1) {groupIndex = 1; }
                     if (groupIndex > ELEMENTS) {groupIndex = ELEMENTS; }
-                    xIndexes[k] = xData[groupIndex];
-                    yIndexes[k] = yData[groupIndex];
-                    numPeaks = numPeaks + 1;
+                    xGroup[k] = xData[groupIndex];
+                    yGroup[k] = yData[groupIndex];
                 }
                 
-                if (peakGroup < 3) {peakY = *std::max_element(yIndexes.begin(), yIndexes.begin() + numPeaks); }
-                else {peakY = std::accumulate(yIndexes.begin(), yIndexes.begin() + numPeaks, 0.0) / numPeaks; }
+                if (peakGroup < 3) {peakY = *std::max_element(yGroup.begin(), yGroup.begin() + peakGroup); }
+                else {peakY = std::accumulate(yGroup.begin(), yGroup.begin() + peakGroup, 0.0) / peakGroup; }
 
-                pIndex = val2ind(yIndexes, numPeaks, peakY);
-                peakX = xIndexes[pIndex[0]];
+                pIndex = val2ind(yGroup, peakGroup, peakY);
+                peakX = xGroup[pIndex[0]];
 
                 if (peakY > ampThreshold)
                 {

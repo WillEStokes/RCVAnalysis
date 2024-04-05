@@ -23,6 +23,44 @@ std::array<double, SIZE> ForEach(const std::array<double, SIZE>& values, double 
 
 int main()
 {
+    uint8_t newAddress = 104;
+    // for (int i = 0; i < 2; i++) {
+    // std::string tmp = std::to_string(newAddress);
+    // char const *newAddressChar = tmp.c_str();
+    // std::cout << tmp << std::endl;
+    // std::cout << newAddressChar << std::endl;
+    // std::cout << newAddressChar[0] << std::endl;
+    // std::cout << newAddressChar[1] << std::endl;
+    // std::cout << newAddressChar[2] << std::endl;
+    // newAddress++;
+    // }
+
+    uint8_t value = static_cast<uint8_t>(newAddress);
+    char dig[3] = { NULL, NULL, NULL};
+    int x = 0;
+    while (value > 0 && x < 3) {
+        dig[x] = value % 10;
+        value /= 10;
+        x++;
+    }
+    // std::cout << dig[0] << dig[1] << dig[2] << std::endl;
+    // printf("%i", dig[2]);
+    // printf("%i", dig[1]);
+    // printf("%i\n", dig[0]);
+    // printf("x: %i\n", x);
+    // printf("%i\n", value);
+
+    if (dig[1] == NULL && dig[2] == NULL) {
+        printf("%i\n", dig[0]);
+    } else if (dig[2] == NULL) {
+        printf("%i", dig[1]);
+        printf("%i\n", dig[0]);
+    } else {
+        printf("%c", char(dig[2] + 48));
+        printf("%i", dig[1]);
+        printf("%i\n", dig[0]);
+    }
+
     float time = 0.01;
     printf("chrono time: %i\n", std::chrono::microseconds(static_cast<long int>(time * 1000 / 2.0f)));
     

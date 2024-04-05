@@ -1,7 +1,7 @@
 #include <iostream>
 #include <array>
 #include <string.h>
-#include "arrayPractice.h"
+// #include "arrayPractice.h"
 
 template<typename T, size_t S>
 class Array
