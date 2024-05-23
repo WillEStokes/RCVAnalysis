@@ -19,7 +19,8 @@ The HISENTS control application uses the RCVAnalysis.dll to analyse RCV data. Th
 ## RCV Analysis Methods
 ### Peak Finding Function
 Function arguments for *findPeaksWrapper* are as follows:  
-  
+
+```c++
 int **findPeaksWrapper**(double* xData,  
 double* yData,  
 const double slopeThreshold,  
@@ -31,6 +32,7 @@ const double locationThreshold,
 int indexes[2],  
 double heights[2],  
 double locations[2] )
+```
 
 The HISENTS control application passes the following function argument values to *findPeaksWrapper*:
 Function Argument | Passed Value
@@ -53,7 +55,8 @@ The method for finding peaks has been adapted from the ‘findpeaksxw.m’ scrip
 
 ### Feature Calculation Function
 Function arguments for *findFeaturesWrapper* are as follows:  
-  
+
+```c++
 int **findFeaturesWrapper**(double* xData,  
 double* yData,  
 int* indexes,  
@@ -63,6 +66,7 @@ double fullHeight[2],
 double FWHM[2],  
 double xValsFullHeight[4],  
 double xValsHalfHeight[4] )
+```
 
 Following smoothing and derivative calculation, steps 3-8 are repeated for each of the peak indexes identified using the peak finding function.
 1. The RCV data is smoothed with a moving band of size *smoothWidth*
