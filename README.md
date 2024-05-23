@@ -1,5 +1,5 @@
 # RCVAnalysis
-Calculating features of rapid cyclic voltammetry traces.
+Find peaks and features from rapid cyclic voltammetry traces!
 
 ## Peak Metric Description
 The following figure demonstrates a sample RCV scan with the peak metrics overlaid:  
